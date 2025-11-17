@@ -1,0 +1,30 @@
+{
+  "name": "choice",
+  "version": "1.0.0",
+  "description": "Application de sondages par swipe pour groupes d'amis",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@pinia/nuxt": "^0.5.1",
+    "@vueuse/core": "^10.9.0",
+    "@vueuse/nuxt": "^10.9.0",
+    "gsap": "^3.12.5",
+    "nuxt": "^3.11.2",
+    "pinia": "^2.1.7",
+    "primevue": "^3.52.0",
+    "primeicons": "^7.0.0",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "latest",
+    "sass": "^1.72.0"
+  }
+}
