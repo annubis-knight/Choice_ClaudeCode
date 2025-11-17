@@ -9,14 +9,22 @@
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    
+    "postinstall": "nuxt prepare",
+    "git:status": "git status",
+    "git:update": "git pull",
+    "git:branches": "git branch -a",
+    "git:log": "git log --oneline --graph --all -10",
+    "git:changes": "git fetch && git log HEAD..origin/$(git rev-parse --abbrev-ref HEAD) --oneline",
+    "git:sync": "git fetch && git pull && echo 'Synchronisation terminée !'",
+    "git:info": "git fetch && echo '=== Branches ===' && git branch -a && echo '' && echo '=== Derniers commits ===' && git log --oneline --graph -5 && echo '' && echo '=== Statut ===' && git status"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.5.1",
     "@vueuse/core": "^10.9.0",
     "@vueuse/nuxt": "^10.9.0",
     "gsap": "^3.12.5",
-    "nuxt": "^3.11.2",
+    "nuxt": "3.17.7",
     "pinia": "^2.1.7",
     "primevue": "^3.52.0",
     "primeicons": "^7.0.0",
@@ -26,5 +34,8 @@
   "devDependencies": {
     "@nuxt/devtools": "latest",
     "sass": "^1.72.0"
+  },
+  "overrides": {
+    "glob": "^11.0.4"
   }
 }

@@ -34,3 +34,9 @@ lerna-debug.log*
 *.db
 *.sqlite
 *.sqlite3
+
+# Claude Code
+.claude/
+
+# Backup files
+*.bak
