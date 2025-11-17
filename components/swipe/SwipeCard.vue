@@ -25,6 +25,7 @@
     <transition name="fade-slide">
       <div
         v-if="showRating"
+        ref="ratingScaleRef"
         class="rating-scale"
         :class="`rating-scale-${ratingPosition}`"
       >
@@ -34,10 +35,14 @@
             :key="rating"
             class="rating-item"
             :class="{ active: currentRating === rating }"
-            @click="selectRating(rating)"
           >
             <span class="rating-number">{{ rating }}</span>
           </div>
+        </div>
+
+        <!-- Indication visuelle de la note survolée -->
+        <div class="rating-hint">
+          <span v-if="currentRating !== null">{{ currentRating }}</span>
         </div>
       </div>
     </transition>
@@ -99,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useSwipe } from '~/composables/useSwipe'
 
 /**
@@ -125,6 +130,9 @@ const emit = defineEmits([
 
 // Référence à l'élément DOM de la carte
 const cardRef = ref(null)
+
+// Référence à l'élément de l'échelle de notation
+const ratingScaleRef = ref(null)
 
 // Valeurs de notation possibles (0 à 10)
 const ratingValues = computed(() => Array.from({ length: 11 }, (_, i) => 10 - i))
@@ -161,15 +169,22 @@ const {
   swipeIndicatorOpacity,
   swipeDirection,
   triggerSwipe,
-  updateRating
+  setRatingScaleElement
 } = useSwipe(cardRef, handleSwipeLeft, handleSwipeRight)
 
 /**
- * Sélectionne une notation
+ * Surveiller quand l'échelle de notation devient visible
+ * pour passer sa référence au composable
  */
-const selectRating = (rating) => {
-  updateRating(rating)
-}
+watch(showRating, async (isVisible) => {
+  if (isVisible) {
+    // Attendre le prochain tick pour que le DOM soit mis à jour
+    await nextTick()
+    if (ratingScaleRef.value) {
+      setRatingScaleElement(ratingScaleRef.value)
+    }
+  }
+})
 
 /**
  * Expose des méthodes pour usage externe (par le parent)
@@ -243,51 +258,62 @@ defineExpose({
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 60px;
-  background: rgba(0, 0, 0, 0.8);
+  width: 80px;
+  background: rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(10px);
   z-index: 20;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 1rem 0;
+  justify-content: center;
+  padding: 2rem 0;
 
   &.rating-scale-left {
     left: 0;
-    border-right: 2px solid rgba(255, 255, 255, 0.2);
+    border-right: 3px solid rgba(255, 255, 255, 0.3);
   }
 
   &.rating-scale-right {
     right: 0;
-    border-left: 2px solid rgba(255, 255, 255, 0.2);
+    border-left: 3px solid rgba(255, 255, 255, 0.3);
   }
 }
 
 .rating-scale-track {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  justify-content: space-between;
   width: 100%;
+  height: 100%;
+  flex: 1;
 }
 
 .rating-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
+  flex: 1;
+  transition: all 0.15s;
+  position: relative;
 
   &.active {
-    background: rgba(102, 126, 234, 0.8);
-    transform: scale(1.2);
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
 
     .rating-number {
-      font-size: 1.2rem;
-      font-weight: 700;
+      font-size: 1.4rem;
+      font-weight: 800;
+      transform: scale(1.3);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -3px;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: white;
     }
   }
 }
@@ -295,7 +321,25 @@ defineExpose({
 .rating-number {
   color: white;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.1rem;
+  transition: all 0.15s;
+  pointer-events: none;
+}
+
+.rating-hint {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 3rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+  z-index: 1;
+
+  span {
+    display: block;
+    text-align: center;
+  }
 }
 
 /* Contenu de la carte */

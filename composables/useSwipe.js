@@ -34,10 +34,9 @@ export const useSwipe = (cardElement, onSwipeLeft, onSwipeRight) => {
   // Seuils pour les différentes actions
   const SWIPE_THRESHOLD = 100 // Distance minimale pour déclencher un swipe
   const LONG_SWIPE_THRESHOLD = 150 // Distance pour activer la notation
-  const RATING_SHOW_DELAY = 300 // Délai avant d'afficher la notation (ms)
 
-  // Timer pour le long swipe
-  let longSwipeTimer = null
+  // Référence à l'élément de l'échelle de notation (sera défini depuis le composant)
+  const ratingScaleElement = ref(null)
 
   /**
    * Distance de déplacement actuelle
@@ -88,14 +87,6 @@ export const useSwipe = (cardElement, onSwipeLeft, onSwipeRight) => {
     // Réinitialiser les états
     showRating.value = false
     currentRating.value = null
-
-    // Démarrer le timer pour le long swipe
-    longSwipeTimer = setTimeout(() => {
-      if (isDragging.value && Math.abs(offsetX.value) > LONG_SWIPE_THRESHOLD) {
-        showRating.value = true
-        ratingPosition.value = offsetX.value > 0 ? 'right' : 'left'
-      }
-    }, RATING_SHOW_DELAY)
   }
 
   /**
@@ -121,6 +112,14 @@ export const useSwipe = (cardElement, onSwipeLeft, onSwipeRight) => {
       currentRating.value = null
     }
 
+    // Si l'échelle de notation est visible, calculer la note en fonction de la position Y
+    if (showRating.value && ratingScaleElement.value) {
+      const rect = ratingScaleElement.value.getBoundingClientRect()
+      const relativeY = currentY.value - rect.top
+      const rating = calculateRatingFromPosition(relativeY, rect.height)
+      currentRating.value = rating
+    }
+
     // Mettre à jour la position de la carte via GSAP (plus fluide)
     if (cardElement.value) {
       gsap.to(cardElement.value, {
@@ -139,19 +138,15 @@ export const useSwipe = (cardElement, onSwipeLeft, onSwipeRight) => {
   const handleDragEnd = () => {
     if (!isDragging.value) return
 
-    // Annuler le timer du long swipe
-    if (longSwipeTimer) {
-      clearTimeout(longSwipeTimer)
-      longSwipeTimer = null
-    }
-
     isDragging.value = false
 
     // Vérifier si le swipe est assez long
     if (Math.abs(offsetX.value) > SWIPE_THRESHOLD) {
       // Swipe validé !
       const direction = offsetX.value > 0 ? 'right' : 'left'
-      animateSwipeOut(direction, currentRating.value)
+      // Si l'échelle était visible et qu'une note a été sélectionnée, l'utiliser
+      const finalRating = showRating.value ? currentRating.value : null
+      animateSwipeOut(direction, finalRating)
     } else {
       // Swipe annulé, retour à la position initiale
       animateReturn()
@@ -247,11 +242,23 @@ export const useSwipe = (cardElement, onSwipeLeft, onSwipeRight) => {
 
   /**
    * Calcule la notation basée sur la position Y pendant un long swipe
+   * @param {number} relativeY - Position Y relative à l'échelle (0 = haut de l'échelle)
+   * @param {number} containerHeight - Hauteur totale de l'échelle
+   * @returns {number} Note de 0 à 10
    */
-  const calculateRatingFromPosition = (clientY, containerHeight) => {
-    // Diviser la hauteur en 11 zones (0 à 10)
-    const rating = Math.floor((containerHeight - clientY) / (containerHeight / 11))
+  const calculateRatingFromPosition = (relativeY, containerHeight) => {
+    // L'échelle va de 10 en haut à 0 en bas
+    // Diviser la hauteur en 11 zones égales (0 à 10)
+    const normalizedPosition = Math.max(0, Math.min(1, relativeY / containerHeight))
+    const rating = Math.floor((1 - normalizedPosition) * 11)
     return Math.max(0, Math.min(10, rating))
+  }
+
+  /**
+   * Définit l'élément de l'échelle de notation (appelé depuis le composant)
+   */
+  const setRatingScaleElement = (element) => {
+    ratingScaleElement.value = element
   }
 
   // Monter les event listeners
@@ -280,10 +287,6 @@ export const useSwipe = (cardElement, onSwipeLeft, onSwipeRight) => {
     cardElement.value.removeEventListener('mousedown', handleDragStart)
     window.removeEventListener('mousemove', handleDragMove)
     window.removeEventListener('mouseup', handleDragEnd)
-
-    if (longSwipeTimer) {
-      clearTimeout(longSwipeTimer)
-    }
   })
 
   return {
@@ -305,6 +308,7 @@ export const useSwipe = (cardElement, onSwipeLeft, onSwipeRight) => {
     triggerSwipe,
     updateRating,
     resetCard,
-    calculateRatingFromPosition
+    calculateRatingFromPosition,
+    setRatingScaleElement
   }
 }
