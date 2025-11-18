@@ -11,6 +11,7 @@ export default defineNuxtConfig({
   // Configuration PWA (à ajouter plus tard avec @vite-pwa/nuxt)
   css: [
     'primeicons/primeicons.css',
+    '~/assets/css/colors.css',
     '~/assets/css/main.css'
   ],
 

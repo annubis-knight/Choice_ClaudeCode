@@ -181,16 +181,18 @@ defineExpose({
   width: 100%;
   max-width: 400px;
   height: 600px;
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  background: var(--background-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   overflow: hidden;
   cursor: grab;
   user-select: none;
   touch-action: none;
+  border: 1px solid var(--border-color);
 
   &.is-dragging {
     cursor: grabbing;
+    box-shadow: var(--shadow-2xl);
   }
 
   @media (max-width: 768px) {
@@ -202,35 +204,35 @@ defineExpose({
 /* Indicateurs de swipe */
 .swipe-indicator {
   position: absolute;
-  top: 2rem;
+  top: var(--spacing-xl);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 700;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  font-weight: 800;
   font-size: 1.5rem;
   z-index: 10;
   pointer-events: none;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-base) var(--transition-ease);
 
   i {
     font-size: 3rem;
   }
 
   &.swipe-indicator-left {
-    left: 2rem;
-    color: #f87171;
-    background: rgba(248, 113, 113, 0.1);
-    border: 3px solid #f87171;
+    left: var(--spacing-xl);
+    color: var(--color-danger);
+    background: rgba(248, 113, 113, 0.15);
+    border: 4px solid var(--color-danger);
   }
 
   &.swipe-indicator-right {
-    right: 2rem;
-    color: #4ade80;
-    background: rgba(74, 222, 128, 0.1);
-    border: 3px solid #4ade80;
+    right: var(--spacing-xl);
+    color: var(--color-success);
+    background: rgba(74, 222, 128, 0.15);
+    border: 4px solid var(--color-success);
   }
 }
 
@@ -255,86 +257,92 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--background-tertiary);
 
   i {
     font-size: 4rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-muted);
   }
 }
 
 .card-info {
-  padding: 1.5rem;
-  background: white;
+  padding: var(--spacing-xl);
+  background: var(--background-primary);
+  border-top: 1px solid var(--border-color);
 }
 
 .card-title {
   font-size: 1.5rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: -0.02em;
 }
 
 .card-description {
-  font-size: 0.95rem;
-  color: #6b7280;
-  margin-bottom: 1rem;
-  line-height: 1.5;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.6;
 }
 
 .card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
 }
 
 .card-tag {
-  padding: 0.25rem 0.75rem;
-  background: #e5e7eb;
-  color: #4b5563;
-  border-radius: 1rem;
-  font-size: 0.85rem;
-  font-weight: 500;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--background-secondary);
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
 }
 
 .card-meta {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
 }
 
 .meta-item {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  color: #6b7280;
+  gap: var(--spacing-sm);
+  color: var(--text-tertiary);
   font-size: 0.9rem;
+  font-weight: 500;
 
   i {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
   }
 }
 
 /* Badge de notation actuelle */
 .current-rating-badge {
   position: absolute;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  background: rgba(102, 126, 234, 0.95);
-  color: white;
-  padding: 0.75rem 1.25rem;
-  border-radius: 2rem;
+  bottom: var(--spacing-xl);
+  right: var(--spacing-xl);
+  background: var(--color-primary);
+  color: var(--text-primary);
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: 700;
-  font-size: 1.1rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  gap: var(--spacing-sm);
+  font-weight: 900;
+  font-size: 1.25rem;
+  box-shadow: var(--shadow-lg);
   z-index: 15;
+  border: 2px solid var(--text-primary);
 
   i {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
 }
 

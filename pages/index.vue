@@ -151,13 +151,13 @@ onMounted(async () => {
 <style scoped lang="scss">
 .page-poll {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-color: var(--background-primary);
+  padding: var(--spacing-2xl) 0;
 }
 
 .poll-header {
-  padding: 2rem 1rem 1rem;
+  padding: 0 var(--spacing-lg) var(--spacing-2xl);
   text-align: center;
-  color: white;
 
   .container {
     max-width: 600px;
@@ -166,21 +166,24 @@ onMounted(async () => {
 }
 
 .poll-title {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
 
   @media (max-width: 768px) {
-    font-size: 1.5rem;
+    font-size: 2rem;
   }
 }
 
 .poll-subtitle {
-  font-size: 1.1rem;
-  opacity: 0.9;
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  font-weight: 500;
 
   @media (max-width: 768px) {
-    font-size: 1rem;
+    font-size: 1.125rem;
   }
 }
 
@@ -194,11 +197,12 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   min-height: 60vh;
-  color: white;
-  gap: 1rem;
+  color: var(--text-primary);
+  gap: var(--spacing-lg);
 
   p {
     font-size: 1.1rem;
+    color: var(--text-secondary);
   }
 }
 </style>
