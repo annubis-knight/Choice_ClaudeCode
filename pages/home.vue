@@ -3,120 +3,102 @@
     <!-- Header -->
     <header class="home-header">
       <h1 class="home-title">Choice</h1>
-      <p class="home-subtitle">Vos sondages de groupe</p>
+      <p class="home-subtitle">Votez ensemble, décidez mieux</p>
     </header>
 
+    <!-- Onglets -->
+    <div class="tabs-container">
+      <button
+        v-for="tab in tabs"
+        :key="tab.value"
+        class="tab-btn"
+        :class="{ active: activeTab === tab.value }"
+        @click="activeTab = tab.value"
+      >
+        {{ tab.label }}
+        <span v-if="tab.count > 0" class="tab-badge">{{ tab.count }}</span>
+      </button>
+    </div>
+
     <!-- Liste des sondages -->
-    <main class="home-main">
-      <div class="polls-container">
-        <h2 class="section-title">Sondages actifs</h2>
+    <main class="polls-main">
+      <div v-if="filteredPolls.length > 0" class="polls-list">
+        <div
+          v-for="poll in filteredPolls"
+          :key="poll.id"
+          class="poll-card"
+          @click="goToPoll(poll)"
+        >
+          <!-- Image de gauche -->
+          <div class="poll-image" :style="{ backgroundImage: `url(${poll.coverImage})` }">
+            <div class="poll-image-overlay"></div>
+          </div>
 
-        <!-- Sondages disponibles -->
-        <div class="polls-grid">
-          <div
-            v-for="poll in activePolls"
-            :key="poll.id"
-            class="poll-card"
-            @click="goToPoll(poll.id)"
-          >
-            <!-- Badge statut -->
-            <div class="poll-badge" :class="`poll-badge-${poll.status}`">
-              {{ poll.statusLabel }}
-            </div>
-
-            <!-- Image de couverture -->
-            <div class="poll-image">
-              <img
-                v-if="poll.coverImage"
-                :src="poll.coverImage"
-                :alt="poll.title"
-              />
-              <div v-else class="poll-image-placeholder">
-                <i class="pi pi-question-circle"></i>
-              </div>
-            </div>
-
-            <!-- Informations -->
-            <div class="poll-content">
+          <!-- Contenu principal -->
+          <div class="poll-content">
+            <div class="poll-header">
               <h3 class="poll-title">{{ poll.title }}</h3>
-              <p class="poll-description">{{ poll.description }}</p>
-
-              <!-- Métadonnées -->
-              <div class="poll-meta">
-                <span class="poll-meta-item">
-                  <i class="pi pi-users"></i>
-                  {{ poll.groupName }}
-                </span>
-                <span class="poll-meta-item">
-                  <i class="pi pi-list"></i>
-                  {{ poll.proposalCount }} options
-                </span>
+              <div class="poll-badge" :class="`badge-${poll.status}`">
+                {{ poll.statusLabel }}
               </div>
+            </div>
 
-              <!-- Progression si déjà commencé -->
-              <div v-if="poll.progress > 0" class="poll-progress">
-                <div class="progress-bar">
-                  <div
-                    class="progress-fill"
-                    :style="{ width: `${poll.progress}%` }"
-                  ></div>
-                </div>
-                <span class="progress-text">{{ poll.progress }}% complété</span>
-              </div>
+            <p class="poll-description">{{ poll.description }}</p>
 
-              <!-- Date limite -->
-              <div v-if="poll.deadline" class="poll-deadline">
+            <!-- Métadonnées -->
+            <div class="poll-meta">
+              <span class="meta-item">
+                <i class="pi pi-users"></i>
+                {{ poll.groupName }}
+              </span>
+              <span class="meta-item">
+                <i class="pi pi-list"></i>
+                {{ poll.proposalCount }} options
+              </span>
+              <span v-if="poll.deadline && activeTab === 'current'" class="meta-item meta-deadline">
                 <i class="pi pi-clock"></i>
                 {{ formatDeadline(poll.deadline) }}
+              </span>
+            </div>
+
+            <!-- Progression si commencé -->
+            <div v-if="poll.userProgress > 0 && poll.userProgress < 100" class="poll-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: `${poll.userProgress}%` }"></div>
               </div>
+              <span class="progress-text">{{ poll.userProgress }}% complété</span>
+            </div>
+
+            <!-- État spécial si en attente -->
+            <div v-if="poll.userProgress === 100 && poll.status === 'current'" class="waiting-badge">
+              <i class="pi pi-clock"></i>
+              En attente des autres participants
             </div>
           </div>
-        </div>
 
-        <!-- Sondages terminés -->
-        <template v-if="completedPolls.length > 0">
-          <h2 class="section-title section-title-secondary">Terminés</h2>
-          <div class="polls-grid">
-            <div
-              v-for="poll in completedPolls"
-              :key="poll.id"
-              class="poll-card poll-card-completed"
-              @click="goToPollResults(poll.id)"
-            >
-              <div class="poll-badge poll-badge-completed">
-                <i class="pi pi-check"></i> Terminé
-              </div>
-
-              <div class="poll-image poll-image-grayscale">
-                <img
-                  v-if="poll.coverImage"
-                  :src="poll.coverImage"
-                  :alt="poll.title"
-                />
-                <div v-else class="poll-image-placeholder">
-                  <i class="pi pi-check-circle"></i>
-                </div>
-              </div>
-
-              <div class="poll-content">
-                <h3 class="poll-title">{{ poll.title }}</h3>
-                <p class="poll-meta-item">
-                  <i class="pi pi-users"></i>
-                  {{ poll.groupName }}
-                </p>
-              </div>
-            </div>
+          <!-- Chevron -->
+          <div class="poll-arrow">
+            <i class="pi pi-chevron-right"></i>
           </div>
-        </template>
-
-        <!-- État vide -->
-        <div v-if="activePolls.length === 0 && completedPolls.length === 0" class="empty-state">
-          <i class="pi pi-inbox"></i>
-          <p>Aucun sondage disponible</p>
-          <p class="empty-state-hint">Vous serez notifié quand un nouveau sondage sera créé</p>
         </div>
       </div>
+
+      <!-- État vide -->
+      <div v-else class="empty-state">
+        <i class="pi pi-inbox"></i>
+        <p>{{ activeTab === 'current' ? 'Aucun sondage en cours' : 'Aucun sondage passé' }}</p>
+        <p class="empty-hint">
+          {{ activeTab === 'current'
+            ? 'Créez un sondage ou attendez d\'être invité'
+            : 'Vos sondages terminés apparaîtront ici' }}
+        </p>
+      </div>
     </main>
+
+    <!-- Bouton FAB pour créer un sondage -->
+    <button class="fab-button" @click="createPoll" title="Créer un sondage">
+      <i class="pi pi-plus"></i>
+    </button>
 
     <!-- Bottom Navigation -->
     <BottomNav />
@@ -139,7 +121,28 @@ definePageMeta({
 })
 
 /**
- * Données de démonstration des sondages
+ * Onglet actif
+ */
+const activeTab = ref('current')
+
+/**
+ * Onglets disponibles
+ */
+const tabs = computed(() => [
+  {
+    value: 'current',
+    label: 'En cours',
+    count: polls.value.filter(p => p.status === 'current').length
+  },
+  {
+    value: 'past',
+    label: 'Terminés',
+    count: polls.value.filter(p => p.status === 'completed').length
+  }
+])
+
+/**
+ * Données de démonstration
  * TODO: Remplacer par un vrai appel API
  */
 const polls = ref([
@@ -149,64 +152,86 @@ const polls = ref([
     description: 'Votez pour vos activités préférées !',
     groupName: 'Amis de la promo',
     proposalCount: 8,
-    status: 'active',
-    statusLabel: 'En cours',
-    progress: 0,
-    deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // Dans 2 jours
-    coverImage: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&h=400&fit=crop'
+    status: 'current',
+    statusLabel: 'À voter',
+    userProgress: 0, // L'utilisateur n'a pas encore voté
+    deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+    coverImage: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=400&h=300&fit=crop'
   },
   {
     id: 'demo-2',
     title: '🏖️ Vacances d\'été 2025',
-    description: 'Choisissons notre destination de vacances ensemble',
+    description: 'Choisissons notre destination ensemble',
     groupName: 'Famille Martin',
     proposalCount: 5,
-    status: 'active',
-    statusLabel: 'Nouveau',
-    progress: 0,
-    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Dans 7 jours
-    coverImage: 'https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=800&h=400&fit=crop'
+    status: 'current',
+    statusLabel: 'En cours',
+    userProgress: 60, // L'utilisateur a voté sur 3/5
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    coverImage: 'https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=400&h=300&fit=crop'
+  },
+  {
+    id: 'demo-4',
+    title: '🎬 Film de la soirée',
+    description: 'Quel film regarder ensemble ?',
+    groupName: 'Cinéphiles',
+    proposalCount: 4,
+    status: 'current',
+    statusLabel: 'En attente',
+    userProgress: 100, // L'utilisateur a terminé, attend les autres
+    deadline: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+    coverImage: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=300&fit=crop'
   },
   {
     id: 'demo-3',
     title: '🎮 Soirée jeux vidéo',
-    description: 'Quel jeu pour la LAN party ?',
+    description: 'Le jeu qui a gagné la LAN party',
     groupName: 'Gamers United',
     proposalCount: 6,
     status: 'completed',
     statusLabel: 'Terminé',
-    progress: 100,
-    coverImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=400&fit=crop'
+    userProgress: 100,
+    coverImage: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop'
   }
 ])
 
 /**
- * Sondages actifs
+ * Sondages filtrés par onglet
  */
-const activePolls = computed(() =>
-  polls.value.filter(poll => poll.status === 'active')
-)
-
-/**
- * Sondages terminés
- */
-const completedPolls = computed(() =>
-  polls.value.filter(poll => poll.status === 'completed')
-)
+const filteredPolls = computed(() => {
+  if (activeTab.value === 'current') {
+    return polls.value.filter(p => p.status === 'current')
+  } else {
+    return polls.value.filter(p => p.status === 'completed')
+  }
+})
 
 /**
  * Naviguer vers un sondage
  */
-const goToPoll = (pollId) => {
-  router.push(`/poll/${pollId}`)
+const goToPoll = (poll) => {
+  if (poll.status === 'completed') {
+    // Sondage terminé → Page de résultats
+    router.push(`/poll/${poll.id}/results`)
+  } else {
+    // Sondage en cours
+    if (poll.userProgress === 100) {
+      // Utilisateur a terminé → Page summary (en attente des autres)
+      router.push(`/poll/summary?pollId=${poll.id}`)
+    } else {
+      // Utilisateur n'a pas terminé → Page de vote
+      router.push(`/poll/${poll.id}`)
+    }
+  }
 }
 
 /**
- * Naviguer vers les résultats d'un sondage
+ * Créer un nouveau sondage
  */
-const goToPollResults = (pollId) => {
-  // TODO: Créer une page de résultats
-  router.push(`/poll/${pollId}/results`)
+const createPoll = () => {
+  // TODO: Implémenter la création de sondage
+  console.log('Créer un sondage')
+  alert('Fonctionnalité bientôt disponible !')
 }
 
 /**
@@ -219,9 +244,9 @@ const formatDeadline = (deadline) => {
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
 
   if (days > 0) {
-    return `Expire dans ${days} jour${days > 1 ? 's' : ''}`
+    return `${days}j restant${days > 1 ? 's' : ''}`
   } else if (hours > 0) {
-    return `Expire dans ${hours}h`
+    return `${hours}h restantes`
   } else {
     return 'Expire bientôt'
   }
@@ -237,196 +262,252 @@ const formatDeadline = (deadline) => {
 
 /* Header */
 .home-header {
-  padding: var(--spacing-2xl) var(--spacing-lg);
+  padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-xl);
   text-align: center;
   background: linear-gradient(135deg, var(--color-primary) 0%, #f0a500 100%);
   color: var(--text-primary);
 }
 
 .home-title {
-  font-size: 3rem;
-  font-weight: 900;
-  margin: 0 0 var(--spacing-sm) 0;
-  letter-spacing: -0.03em;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 var(--spacing-xs) 0;
+  letter-spacing: -0.02em;
 
   @media (max-width: 768px) {
-    font-size: 2.5rem;
+    font-size: 2rem;
   }
 }
 
 .home-subtitle {
-  font-size: 1.25rem;
+  font-size: 1rem;
   margin: 0;
   opacity: 0.9;
+  font-weight: 400;
+}
+
+/* Onglets */
+.tabs-container {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  background: var(--background-primary);
+  border-bottom: 2px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: relative;
+
+  &:hover {
+    background: var(--background-tertiary);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background: var(--color-primary);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 var(--spacing-xs);
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
   font-weight: 600;
+
+  .tab-btn.active & {
+    background: rgba(0, 0, 0, 0.2);
+  }
 }
 
 /* Main */
-.home-main {
-  padding: var(--spacing-2xl) var(--spacing-lg);
+.polls-main {
+  padding: var(--spacing-lg);
 }
 
-.polls-container {
-  max-width: 1200px;
+.polls-list {
+  max-width: 900px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
-.section-title {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin: 0 0 var(--spacing-xl) 0;
-
-  &.section-title-secondary {
-    margin-top: var(--spacing-3xl);
-    color: var(--text-secondary);
-  }
-}
-
-/* Grille de sondages */
-.polls-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--spacing-xl);
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
-  }
-}
-
-/* Carte de sondage */
+/* Carte de sondage - Layout horizontal */
 .poll-card {
-  position: relative;
+  display: flex;
   background: var(--background-secondary);
   border-radius: var(--radius-lg);
   border: 2px solid var(--border-color);
   overflow: hidden;
   cursor: pointer;
-  transition: all var(--transition-base) var(--transition-ease);
+  transition: all var(--transition-base);
   box-shadow: var(--shadow-sm);
+  min-height: 120px;
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
     border-color: var(--color-primary);
+
+    .poll-arrow {
+      transform: translateX(4px);
+    }
   }
 
-  &.poll-card-completed {
-    opacity: 0.8;
-
-    &:hover {
-      opacity: 1;
-    }
+  &:active {
+    transform: translateY(0);
   }
 }
 
-.poll-badge {
-  position: absolute;
-  top: var(--spacing-md);
-  right: var(--spacing-md);
-  padding: var(--spacing-xs) var(--spacing-md);
-  border-radius: var(--radius-full);
-  font-size: 0.85rem;
-  font-weight: 700;
-  z-index: 10;
-  box-shadow: var(--shadow-md);
+.poll-image {
+  position: relative;
+  width: 100px;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--background-tertiary);
 
-  &.poll-badge-active {
+  @media (max-width: 768px) {
+    width: 80px;
+  }
+}
+
+.poll-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(251, 187, 33, 0.1) 0%, rgba(240, 165, 0, 0.15) 100%);
+}
+
+.poll-content {
+  flex: 1;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0; /* Pour permettre le text-overflow */
+}
+
+.poll-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.poll-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+
+  /* Truncate long titles */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.poll-badge {
+  flex-shrink: 0;
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.badge-current {
     background: var(--color-primary);
     color: var(--text-primary);
   }
 
-  &.poll-badge-completed {
+  &.badge-completed {
     background: var(--color-success);
     color: white;
   }
 }
 
-.poll-image {
-  width: 100%;
-  height: 180px;
-  background: var(--background-tertiary);
-  overflow: hidden;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-  }
-
-  &.poll-image-grayscale img {
-    filter: grayscale(80%);
-  }
-}
-
-.poll-card:hover .poll-image img {
-  transform: scale(1.05);
-}
-
-.poll-image-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  i {
-    font-size: 4rem;
-    color: var(--text-muted);
-  }
-}
-
-.poll-content {
-  padding: var(--spacing-lg);
-}
-
-.poll-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 var(--spacing-sm) 0;
-  line-height: 1.3;
-}
-
 .poll-description {
-  font-size: 1rem;
+  font-size: 0.875rem;
   color: var(--text-secondary);
-  margin: 0 0 var(--spacing-md) 0;
-  line-height: 1.5;
+  margin: 0;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .poll-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-sm) var(--spacing-md);
+  margin-top: auto;
 }
 
-.poll-meta-item {
+.meta-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  font-size: 0.9rem;
+  gap: 4px;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   font-weight: 500;
 
   i {
     color: var(--color-primary);
+    font-size: 0.9rem;
+  }
+
+  &.meta-deadline {
+    color: var(--color-danger);
+    font-weight: 600;
+
+    i {
+      color: var(--color-danger);
+    }
   }
 }
 
 .poll-progress {
-  margin-top: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
 }
 
 .progress-bar {
-  height: 6px;
+  flex: 1;
+  height: 4px;
   background: var(--background-tertiary);
   border-radius: var(--radius-full);
   overflow: hidden;
-  margin-bottom: var(--spacing-xs);
 }
 
 .progress-fill {
@@ -437,25 +518,46 @@ const formatDeadline = (deadline) => {
 }
 
 .progress-text {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.poll-deadline {
+.waiting-badge {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  font-size: 0.9rem;
-  color: var(--color-danger);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: rgba(251, 187, 33, 0.1);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--color-primary);
   font-weight: 600;
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-sm);
-  background: rgba(248, 113, 113, 0.1);
-  border-radius: var(--radius-md);
+  margin-top: var(--spacing-xs);
 
   i {
-    font-size: 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+.poll-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-md);
+  color: var(--text-muted);
+  transition: transform var(--transition-base);
+
+  i {
+    font-size: 1.25rem;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0 var(--spacing-sm);
+
+    i {
+      font-size: 1rem;
+    }
   }
 }
 
@@ -464,21 +566,58 @@ const formatDeadline = (deadline) => {
   text-align: center;
   padding: var(--spacing-3xl) var(--spacing-lg);
   color: var(--text-secondary);
+  max-width: 400px;
+  margin: 0 auto;
 
   i {
-    font-size: 5rem;
+    font-size: 4rem;
     color: var(--text-muted);
     margin-bottom: var(--spacing-lg);
   }
 
   p {
-    font-size: 1.25rem;
-    margin: var(--spacing-md) 0;
+    font-size: 1.125rem;
+    margin: var(--spacing-sm) 0;
+    font-weight: 500;
+  }
 
-    &.empty-state-hint {
-      font-size: 1rem;
-      color: var(--text-muted);
-    }
+  .empty-hint {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+}
+
+/* Bouton FAB */
+.fab-button {
+  position: fixed;
+  bottom: calc(80px + var(--spacing-lg)); /* Au-dessus de la bottom nav */
+  right: var(--spacing-lg);
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--text-primary);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition: all var(--transition-base);
+  z-index: 100;
+
+  i {
+    font-size: 1.5rem;
+  }
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-xl);
+  }
+
+  &:active {
+    transform: scale(1.05);
   }
 }
 </style>

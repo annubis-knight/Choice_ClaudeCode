@@ -29,11 +29,6 @@ const navItems = [
     label: 'Accueil'
   },
   {
-    path: '/votes',
-    icon: 'pi pi-chart-bar',
-    label: 'Mes Votes'
-  },
-  {
     path: '/groups',
     icon: 'pi pi-users',
     label: 'Groupes'
