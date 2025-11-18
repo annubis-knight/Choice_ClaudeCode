@@ -1,7 +1,7 @@
 <template>
   <div class="swipe-container">
-    <!-- Barre de progression -->
-    <div class="progress-bar">
+    <!-- Barre de progression - Masquée quand le sondage est terminé -->
+    <div v-if="!pollStore.isCompleted" class="progress-bar">
       <div class="progress-text">
         {{ pollStore.currentIndex + 1 }} / {{ pollStore.totalProposals }}
       </div>
@@ -74,26 +74,20 @@
         </div>
       </div>
 
-      <!-- Message de fin -->
+      <!-- Récapitulatif des votes -->
       <transition name="fade-scale">
-        <div v-if="pollStore.isCompleted" class="completion-message">
-          <div class="completion-icon">
-            <i class="pi pi-check-circle"></i>
-          </div>
-          <h2 class="completion-title">Bravo !</h2>
-          <p class="completion-text">
-            Vous avez voté sur toutes les propositions
-          </p>
-          <button class="btn btn-primary completion-button" @click="handleSubmit">
-            <i class="pi pi-send"></i>
-            Envoyer mes réponses
-          </button>
-        </div>
+        <VotesSummary
+          v-if="pollStore.isCompleted"
+          :votes="pollStore.allVotes"
+          :proposals="pollStore.proposals"
+          @submit="handleSubmit"
+          @edit="handleEdit"
+        />
       </transition>
     </div>
 
-    <!-- Boutons d'action (mobile & desktop) -->
-    <div class="action-buttons">
+    <!-- Boutons d'action (mobile & desktop) - Masqués quand le sondage est terminé -->
+    <div v-if="!pollStore.isCompleted" class="action-buttons">
       <button
         class="action-btn action-btn-dislike"
         :disabled="!pollStore.currentProposal"
@@ -150,6 +144,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { usePollStore } from '~/stores/poll'
 import { gsap } from 'gsap'
 import SwipeCard from './SwipeCard.vue'
+import VotesSummary from './VotesSummary.vue'
 
 /**
  * Store Pinia
@@ -262,6 +257,15 @@ const handleSubmit = async () => {
   } else {
     console.error('Erreur lors de la soumission:', result.error)
   }
+}
+
+/**
+ * Permet de revenir en arrière pour modifier les votes
+ */
+const handleEdit = () => {
+  // Revenir à la première proposition
+  pollStore.currentIndex = 0
+  // Optionnel : réinitialiser les votes ou laisser l'utilisateur les modifier
 }
 
 /**
