@@ -251,28 +251,6 @@ const handleSubmit = async () => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xl);
-  max-height: 60vh;
-  overflow-y: auto;
-  padding: var(--spacing-md);
-
-  /* Scrollbar personnalisée */
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: var(--background-tertiary);
-    border-radius: var(--radius-full);
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: var(--color-primary);
-    border-radius: var(--radius-full);
-
-    &:hover {
-      background: var(--color-primary-dark, #e0a61f);
-    }
-  }
 }
 
 .vote-item {
