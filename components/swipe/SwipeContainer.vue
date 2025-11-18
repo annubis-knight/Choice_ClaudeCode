@@ -13,6 +13,32 @@
       </div>
     </div>
 
+    <!-- Échelle de notation sur les bords de l'écran -->
+    <transition name="fade-slide">
+      <div
+        v-if="showRating"
+        ref="ratingScaleRef"
+        class="rating-scale-screen"
+        :class="`rating-scale-${ratingPosition}`"
+      >
+        <div class="rating-scale-track">
+          <div
+            v-for="rating in ratingValues"
+            :key="rating"
+            class="rating-item"
+            :class="{ active: currentRating === rating }"
+          >
+            <span class="rating-number">{{ rating }}</span>
+          </div>
+        </div>
+
+        <!-- Indication visuelle de la note survolée -->
+        <div class="rating-hint">
+          <span v-if="currentRating !== null">{{ currentRating }}</span>
+        </div>
+      </div>
+    </transition>
+
     <!-- Pile de cartes -->
     <div class="cards-stack">
       <!-- Cartes en arrière-plan (3 maximum visibles) -->
@@ -27,8 +53,10 @@
           v-if="index === 0"
           ref="currentCardRef"
           :proposal="proposal"
+          :rating-scale-element="ratingScaleRef"
           @swipe-left="handleSwipeLeft"
           @swipe-right="handleSwipeRight"
+          @rating-state-change="handleRatingStateChange"
         />
         <!-- Cartes en arrière-plan (juste pour l'effet visuel) -->
         <div v-else class="card-preview">
@@ -118,7 +146,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { usePollStore } from '~/stores/poll'
 import { gsap } from 'gsap'
 import SwipeCard from './SwipeCard.vue'
@@ -132,6 +160,23 @@ const pollStore = usePollStore()
  * Référence à la carte actuelle
  */
 const currentCardRef = ref(null)
+
+/**
+ * Référence à l'échelle de notation
+ */
+const ratingScaleRef = ref(null)
+
+/**
+ * État de l'échelle de notation (reçu depuis SwipeCard)
+ */
+const showRating = ref(false)
+const currentRating = ref(null)
+const ratingPosition = ref('right')
+
+/**
+ * Valeurs de notation possibles (0 à 10)
+ */
+const ratingValues = computed(() => Array.from({ length: 11 }, (_, i) => 10 - i))
 
 /**
  * Affichage des instructions
@@ -166,6 +211,15 @@ const handleSwipeRight = ({ proposalId, rating }) => {
   pollStore.recordVote(proposalId, 'right', rating)
   pollStore.nextProposal()
   animateNextCard()
+}
+
+/**
+ * Gère les changements d'état de la notation (depuis SwipeCard)
+ */
+const handleRatingStateChange = ({ show, rating, position }) => {
+  showRating.value = show
+  currentRating.value = rating
+  ratingPosition.value = position
 }
 
 /**
@@ -570,6 +624,97 @@ onMounted(() => {
   margin-top: 2rem;
 }
 
+/* Échelle de notation sur les bords de l'écran */
+.rating-scale-screen {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+
+  &.rating-scale-left {
+    left: 0;
+    border-right: 3px solid rgba(255, 255, 255, 0.3);
+  }
+
+  &.rating-scale-right {
+    right: 0;
+    border-left: 3px solid rgba(255, 255, 255, 0.3);
+  }
+}
+
+.rating-scale-track {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+}
+
+.rating-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  transition: all 0.15s;
+  position: relative;
+
+  &.active {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+
+    .rating-number {
+      font-size: 1.4rem;
+      font-weight: 800;
+      transform: scale(1.3);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -3px;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: white;
+    }
+  }
+}
+
+.rating-number {
+  color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.15s;
+  pointer-events: none;
+}
+
+.rating-hint {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 4rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+  z-index: 1;
+  left: 50%;
+  margin-left: -1rem;
+
+  span {
+    display: block;
+    text-align: center;
+  }
+}
+
 /* Animations */
 .fade-enter-active,
 .fade-leave-active {
@@ -579,6 +724,21 @@ onMounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
 }
 
 .fade-scale-enter-active,

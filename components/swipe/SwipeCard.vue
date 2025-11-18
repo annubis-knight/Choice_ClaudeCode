@@ -21,32 +21,6 @@
       <span>LIKE</span>
     </div>
 
-    <!-- Échelle de notation (visible lors du long swipe) -->
-    <transition name="fade-slide">
-      <div
-        v-if="showRating"
-        ref="ratingScaleRef"
-        class="rating-scale"
-        :class="`rating-scale-${ratingPosition}`"
-      >
-        <div class="rating-scale-track">
-          <div
-            v-for="rating in ratingValues"
-            :key="rating"
-            class="rating-item"
-            :class="{ active: currentRating === rating }"
-          >
-            <span class="rating-number">{{ rating }}</span>
-          </div>
-        </div>
-
-        <!-- Indication visuelle de la note survolée -->
-        <div class="rating-hint">
-          <span v-if="currentRating !== null">{{ currentRating }}</span>
-        </div>
-      </div>
-    </transition>
-
     <!-- Contenu de la carte -->
     <div class="card-content">
       <!-- Image de la proposition -->
@@ -117,6 +91,10 @@ const props = defineProps({
     validator: (value) => {
       return value && typeof value.id !== 'undefined' && typeof value.title === 'string'
     }
+  },
+  ratingScaleElement: {
+    type: Object,
+    default: null
   }
 })
 
@@ -126,16 +104,11 @@ const props = defineProps({
 const emit = defineEmits([
   'swipe-left',  // Émis lors d'un swipe vers la gauche (dislike)
   'swipe-right', // Émis lors d'un swipe vers la droite (like)
+  'rating-state-change' // Émis quand l'état de la notation change
 ])
 
 // Référence à l'élément DOM de la carte
 const cardRef = ref(null)
-
-// Référence à l'élément de l'échelle de notation
-const ratingScaleRef = ref(null)
-
-// Valeurs de notation possibles (0 à 10)
-const ratingValues = computed(() => Array.from({ length: 11 }, (_, i) => 10 - i))
 
 /**
  * Callback appelé lors d'un swipe gauche
@@ -173,17 +146,25 @@ const {
 } = useSwipe(cardRef, handleSwipeLeft, handleSwipeRight)
 
 /**
- * Surveiller quand l'échelle de notation devient visible
- * pour passer sa référence au composable
+ * Surveiller quand la prop ratingScaleElement change
+ * pour la passer au composable
  */
-watch(showRating, async (isVisible) => {
-  if (isVisible) {
-    // Attendre le prochain tick pour que le DOM soit mis à jour
-    await nextTick()
-    if (ratingScaleRef.value) {
-      setRatingScaleElement(ratingScaleRef.value)
-    }
+watch(() => props.ratingScaleElement, (element) => {
+  if (element) {
+    setRatingScaleElement(element)
   }
+}, { immediate: true })
+
+/**
+ * Surveiller les changements d'état de la notation
+ * et les émettre au parent
+ */
+watch([showRating, currentRating, ratingPosition], ([show, rating, position]) => {
+  emit('rating-state-change', {
+    show,
+    rating,
+    position
+  })
 })
 
 /**
@@ -250,95 +231,6 @@ defineExpose({
     color: #4ade80;
     background: rgba(74, 222, 128, 0.1);
     border: 3px solid #4ade80;
-  }
-}
-
-/* Échelle de notation */
-.rating-scale {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 80px;
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(10px);
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 0;
-
-  &.rating-scale-left {
-    left: 0;
-    border-right: 3px solid rgba(255, 255, 255, 0.3);
-  }
-
-  &.rating-scale-right {
-    right: 0;
-    border-left: 3px solid rgba(255, 255, 255, 0.3);
-  }
-}
-
-.rating-scale-track {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 100%;
-  height: 100%;
-  flex: 1;
-}
-
-.rating-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  transition: all 0.15s;
-  position: relative;
-
-  &.active {
-    background: linear-gradient(90deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
-
-    .rating-number {
-      font-size: 1.4rem;
-      font-weight: 800;
-      transform: scale(1.3);
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: -3px;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: white;
-    }
-  }
-}
-
-.rating-number {
-  color: white;
-  font-weight: 600;
-  font-size: 1.1rem;
-  transition: all 0.15s;
-  pointer-events: none;
-}
-
-.rating-hint {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 3rem;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.2);
-  pointer-events: none;
-  z-index: 1;
-
-  span {
-    display: block;
-    text-align: center;
   }
 }
 
@@ -446,19 +338,4 @@ defineExpose({
   }
 }
 
-/* Animations */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all 0.3s ease;
-}
-
-.fade-slide-enter-from {
-  opacity: 0;
-  transform: translateX(-20px);
-}
-
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateX(20px);
-}
 </style>
