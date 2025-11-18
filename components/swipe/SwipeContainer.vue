@@ -74,16 +74,6 @@
         </div>
       </div>
 
-      <!-- Récapitulatif des votes -->
-      <transition name="fade-scale">
-        <VotesSummary
-          v-if="pollStore.isCompleted"
-          :votes="pollStore.allVotes"
-          :proposals="pollStore.proposals"
-          @submit="handleSubmit"
-          @edit="handleEdit"
-        />
-      </transition>
     </div>
 
     <!-- Boutons d'action (mobile & desktop) - Masqués quand le sondage est terminé -->
@@ -142,14 +132,15 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { usePollStore } from '~/stores/poll'
+import { useRouter } from 'vue-router'
 import { gsap } from 'gsap'
 import SwipeCard from './SwipeCard.vue'
-import VotesSummary from './VotesSummary.vue'
 
 /**
- * Store Pinia
+ * Store Pinia et router
  */
 const pollStore = usePollStore()
+const router = useRouter()
 
 /**
  * Référence à la carte actuelle
@@ -169,9 +160,19 @@ const currentRating = ref(null)
 const ratingPosition = ref('right')
 
 /**
- * Valeurs de notation possibles (0 à 10)
+ * Valeurs de notation possibles selon la position
+ * Gauche (dislike) : 5 à 0
+ * Droite (like) : 10 à 5
  */
-const ratingValues = computed(() => Array.from({ length: 11 }, (_, i) => 10 - i))
+const ratingValues = computed(() => {
+  if (ratingPosition.value === 'left') {
+    // Échelle gauche : 5, 4, 3, 2, 1, 0
+    return Array.from({ length: 6 }, (_, i) => 5 - i)
+  } else {
+    // Échelle droite : 10, 9, 8, 7, 6, 5
+    return Array.from({ length: 6 }, (_, i) => 10 - i)
+  }
+})
 
 /**
  * Affichage des instructions
@@ -245,28 +246,13 @@ const handleUndo = () => {
 }
 
 /**
- * Soumet toutes les réponses
+ * Watcher pour rediriger vers la page de récapitulatif quand le sondage est terminé
  */
-const handleSubmit = async () => {
-  const result = await pollStore.submitVotes()
-
-  if (result.success) {
-    // Rediriger vers une page de confirmation ou afficher un message
-    console.log('Votes soumis avec succès !')
-    // navigateTo('/poll/success') // À implémenter
-  } else {
-    console.error('Erreur lors de la soumission:', result.error)
+watch(() => pollStore.isCompleted, (isCompleted) => {
+  if (isCompleted) {
+    router.push('/poll/summary')
   }
-}
-
-/**
- * Permet de revenir en arrière pour modifier les votes
- */
-const handleEdit = () => {
-  // Revenir à la première proposition
-  pollStore.currentIndex = 0
-  // Optionnel : réinitialiser les votes ou laisser l'utilisateur les modifier
-}
+})
 
 /**
  * Cache les instructions

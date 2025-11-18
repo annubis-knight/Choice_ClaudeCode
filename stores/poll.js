@@ -115,18 +115,43 @@ export const usePollStore = defineStore('poll', {
      * @param {string} proposalId - ID de la proposition
      * @param {string} direction - 'left' (dislike) ou 'right' (like)
      * @param {number|null} rating - Note de 0 à 10 (optionnel)
+     * @param {string|null} comment - Commentaire textuel (optionnel)
      */
-    recordVote(proposalId, direction, rating = null) {
+    recordVote(proposalId, direction, rating = null, comment = null) {
       const vote = {
         proposalId,
         direction,
         rating,
+        comment,
         timestamp: new Date().toISOString()
       }
 
       this.votes.set(proposalId, vote)
 
       // Sauvegarder dans le localStorage pour persistance
+      if (process.client) {
+        localStorage.setItem(`poll_${this.currentPoll?.id}_votes`, JSON.stringify(this.allVotes))
+      }
+    },
+
+    /**
+     * Met à jour un vote existant (rating et/ou commentaire)
+     * @param {string} proposalId - ID de la proposition
+     * @param {Object} updates - Objet contenant les champs à mettre à jour
+     */
+    updateVote(proposalId, updates) {
+      const existingVote = this.votes.get(proposalId)
+      if (!existingVote) return
+
+      const updatedVote = {
+        ...existingVote,
+        ...updates,
+        updatedAt: new Date().toISOString()
+      }
+
+      this.votes.set(proposalId, updatedVote)
+
+      // Sauvegarder dans le localStorage
       if (process.client) {
         localStorage.setItem(`poll_${this.currentPoll?.id}_votes`, JSON.stringify(this.allVotes))
       }

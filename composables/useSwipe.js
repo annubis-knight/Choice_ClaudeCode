@@ -116,7 +116,7 @@ export const useSwipe = (cardElement, onSwipeLeft, onSwipeRight) => {
     if (showRating.value && ratingScaleElement.value) {
       const rect = ratingScaleElement.value.getBoundingClientRect()
       const relativeY = currentY.value - rect.top
-      const rating = calculateRatingFromPosition(relativeY, rect.height)
+      const rating = calculateRatingFromPosition(relativeY, rect.height, ratingPosition.value)
       currentRating.value = rating
     }
 
@@ -146,6 +146,11 @@ export const useSwipe = (cardElement, onSwipeLeft, onSwipeRight) => {
       const direction = offsetX.value > 0 ? 'right' : 'left'
       // Si l'échelle était visible et qu'une note a été sélectionnée, l'utiliser
       const finalRating = showRating.value ? currentRating.value : null
+
+      // IMPORTANT : Masquer l'échelle dès le relâchement
+      showRating.value = false
+      currentRating.value = null
+
       animateSwipeOut(direction, finalRating)
     } else {
       // Swipe annulé, retour à la position initiale
@@ -244,14 +249,22 @@ export const useSwipe = (cardElement, onSwipeLeft, onSwipeRight) => {
    * Calcule la notation basée sur la position Y pendant un long swipe
    * @param {number} relativeY - Position Y relative à l'échelle (0 = haut de l'échelle)
    * @param {number} containerHeight - Hauteur totale de l'échelle
+   * @param {string} position - Position de l'échelle ('left' ou 'right')
    * @returns {number} Note de 0 à 10
    */
-  const calculateRatingFromPosition = (relativeY, containerHeight) => {
-    // L'échelle va de 10 en haut à 0 en bas
-    // Diviser la hauteur en 11 zones égales (0 à 10)
+  const calculateRatingFromPosition = (relativeY, containerHeight, position = 'right') => {
+    // Position normalisée (0 en haut, 1 en bas)
     const normalizedPosition = Math.max(0, Math.min(1, relativeY / containerHeight))
-    const rating = Math.floor((1 - normalizedPosition) * 11)
-    return Math.max(0, Math.min(10, rating))
+
+    if (position === 'left') {
+      // Swipe gauche (dislike) : notes de 5 en haut à 0 en bas
+      const rating = Math.floor((1 - normalizedPosition) * 6)
+      return Math.max(0, Math.min(5, rating))
+    } else {
+      // Swipe droite (like) : notes de 10 en haut à 5 en bas
+      const rating = 5 + Math.floor((1 - normalizedPosition) * 6)
+      return Math.max(5, Math.min(10, rating))
+    }
   }
 
   /**
